@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Настройки валидатора</title>
+	<link href="bootstrap.css" rel="stylesheet">
+	<link href="main.css" rel="stylesheet">
+</head>
+<body>
+	<div class="container-fluid mt-3">
+		<div class="mb-3">Серийный номер %sn%</div>
+		<form method="post">
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">WiFi сеть</span>
+				<input id="wifiname" name="wifiname" type="text" class="form-control" value="%wifiname%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">WiFi пароль</span>
+				<input id="wifipassword" name="wifipassword" type="text" class="form-control" value="%wifipassword%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Путь к серверу без /</span>
+				<input id="serverName" name="serverName" type="text" class="form-control" value="%serverName%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Адрес принтера</span>
+				<input id="zebraIP" name="zebraIP" type="text" class="form-control" value="%zebraIP%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Порт принтера</span>
+				<input id="zebraPort" name="zebraPort" type="number" class="form-control" value="%zebraPort%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Процент валидности</span>
+				<input id="checkPercent" name="checkPercent" type="number" class="form-control" value="%checkPercent%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Интервал проверки заданий, мсек</span>
+				<input id="taskDelayTime" name="taskDelayTime" type="number" class="form-control" value="%taskDelayTime%">
+			</div>
+
+			<div class="input-group mb-3">
+				<span class="input-group-text">Время загрузки задания, мсек</span>
+				<input id="loadInterval" name="loadInterval" type="number" class="form-control" value="%loadInterval%">
+			</div>
+
+			<div class="input-group mb-3">
+				<button type="submit" class="btn btn-secondary me-2">Сохранить</button>
+			</div>
+
+		</form>
+	</div>
+	<script src="bootstrap.js"></script>
+</body>
+</html>
