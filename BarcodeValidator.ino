@@ -1,4 +1,4 @@
-//v.1.0.7
+//v.1.0.8
 #include "EspUsbHost.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -222,7 +222,6 @@ void getPrintTask() {
         speed = json_speed;
         printInterval = (height * packet) / (speed * 25.4) * 1000;
         needPrintCount = json_count;
-        Serial.println("Проверка " + String(payload));
 
         status = "ready";
 
@@ -291,26 +290,32 @@ void print() {
   zpl = rus(zpl);
   client.connect(zebraIP.c_str(), zebraPort);
   client.print(zpl);
+  client.stop();
   previousMillis = millis();
 }
 
 void printNotPermit() {
   Serial.println("Проверка не пройдена. Печать остановлена.");
   client.connect(zebraIP.c_str(), zebraPort);
+  if(!client.connected()) Serial.println("Ошибка! Соединение не установлено.");
   String warning = "^XA^PR3^MD10^LH1,1^FO30,100^FB550,5,0,L^A@N,40,40,E:TT0003M_.TTF^FDКонтроль не пройден. Печать остановлена. Напечатано " + String(printedCount) + "/" + String(needPrintCount) + "\\&Осталось " + String(needPrintCount-printedCount) + "^PQ1^XZ";
   client.print(rus(warning));
 }
 
 void taskEnd() {
   client.connect(zebraIP.c_str(), zebraPort);
+  if(!client.connected()) Serial.println("Ошибка! Соединение не установлено.");
   String end = "^XA^PR3^MD10^LH1,1^FO30,100^FB550,3,0,L^A@N,40,40,E:TT0003M_.TTF^FDЗавершено задание " + String(taskID) + ". Напечатано " + String(printedCount) + " этикеток^PQ1^XZ";
   client.print(rus(end));
+  client.stop();
 }
 
 void printPause(){
   client.connect(zebraIP.c_str(), zebraPort);
+  if(!client.connected()) Serial.println("Ошибка! Соединение не установлено.");
   String pause = "^XA^PP^XZ";
   client.print(pause);
+  client.stop();
 }
 
 void scan() {
