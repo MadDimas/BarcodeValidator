@@ -1,4 +1,4 @@
-//v.1.0.5
+//v.1.0.7
 #include "EspUsbHost.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -10,7 +10,7 @@
 #include <AsyncTCP.h>
 #include "LittleFS.h"
 
-const String sn = "0001";
+const String sn = "0003";
 String wifiname, wifipassword;
 String zebraIP;
 int zebraPort;
@@ -222,6 +222,7 @@ void getPrintTask() {
         speed = json_speed;
         printInterval = (height * packet) / (speed * 25.4) * 1000;
         needPrintCount = json_count;
+        Serial.println("Проверка " + String(payload));
 
         status = "ready";
 
@@ -256,7 +257,7 @@ void refreshPrintCount() {
 
 String rus(String source) {
   source.replace("^XA", "^XA^CI28");
-  //source.replace("^PP", ""); Отключено Теренко 201025 №375114
+  source.replace("^PP", "");
   return source;
 }
 
@@ -304,6 +305,12 @@ void taskEnd() {
   client.connect(zebraIP.c_str(), zebraPort);
   String end = "^XA^PR3^MD10^LH1,1^FO30,100^FB550,3,0,L^A@N,40,40,E:TT0003M_.TTF^FDЗавершено задание " + String(taskID) + ". Напечатано " + String(printedCount) + " этикеток^PQ1^XZ";
   client.print(rus(end));
+}
+
+void printPause(){
+  client.connect(zebraIP.c_str(), zebraPort);
+  String pause = "^XA^PP^XZ";
+  client.print(pause);
 }
 
 void scan() {
@@ -402,6 +409,7 @@ void loop() {
   usbHost.task();
   if (status == "printing" and printedCount >= needPrintCount) {
     taskEnd();
+    printPause(); //Добавлено Теренко 201025 №375114
     closeTask();
   }
 
