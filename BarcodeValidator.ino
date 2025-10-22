@@ -1,4 +1,4 @@
-//v.1.0.8
+//v.1.0.9
 #include "EspUsbHost.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -37,6 +37,7 @@ int printedCount, needPrintCount;
 long taskID;
 unsigned long previousMillisTask = 0;
 float taskDelayTime;
+bool logScans = false;
 
 String curBarcode;
 const int dbsize = 5; //Сколько ШК может быть на одной этикетке
@@ -55,6 +56,7 @@ String htmlProcessor(const String &var){
   if(var == "checkPercent") return String(checkPercent);
   if(var == "taskDelayTime") return String(taskDelayTime);
   if(var == "loadInterval") return String(loadInterval);
+  if(var == "logScans" and logScans) return "checked";
 
   return "";
 }
@@ -95,6 +97,9 @@ void setDefaultPrefs(){
   prefs.begin("prefs", false);
   
   if(!prefs.isKey("init")){
+
+    //Системные
+    prefs.putBool("logScans", false);
     
     //WiFi
     prefs.putString("wifiname", "PlasticRepublic");
@@ -130,6 +135,7 @@ void getPrefs(){
   checkPercent = prefs.getInt("checkPercent");
   taskDelayTime = prefs.getFloat("taskDelayTime");
   loadInterval = prefs.getFloat("loadInterval");
+  logScans = prefs.getBool("logScans");
 
   prefs.end();
 }
@@ -170,7 +176,15 @@ void savePrefs(AsyncWebServerRequest *request){
     loadInterval = (request->getParam("loadInterval", true)->value()).toFloat();
     prefs.putFloat("loadInterval", loadInterval);
   }
-
+  if(request->hasParam("logScans", true) and !logScans){
+    logScans = true;
+    prefs.putBool("logScans", true);
+  }
+  if(!request->hasParam("logScans", true) and logScans){
+    logScans = false;
+    prefs.putBool("logScans", false);
+  }
+  
   prefs.end();
   delay(500);
 }
@@ -351,6 +365,7 @@ class MyEspUsbHost : public EspUsbHost {
     if (' ' <= ascii && ascii <= '~') {
       curBarcode += char(ascii);
     } else if (ascii == '\r') {
+      if(logScans) Serial.println("Отсканировано: " + curBarcode);
       scan();
     }
   };
