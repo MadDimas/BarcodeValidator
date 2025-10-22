@@ -1,4 +1,3 @@
-//v.1.0.9
 #include "EspUsbHost.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -11,6 +10,7 @@
 #include "LittleFS.h"
 
 const String sn = "0003";
+const String ver = "1.0.10";
 String wifiname, wifipassword;
 String zebraIP;
 int zebraPort;
@@ -48,6 +48,7 @@ String zpl;
 String htmlProcessor(const String &var){
 
   if(var == "sn") return sn;
+  if(var == "ver") return ver;
   if(var == "wifiname") return wifiname;
   if(var == "wifipassword") return wifipassword;
   if(var == "serverName") return serverName;
