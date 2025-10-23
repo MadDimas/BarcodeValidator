@@ -10,7 +10,7 @@
 #include "LittleFS.h"
 
 const String sn = "0003";
-const String ver = "1.1.0";
+const String ver = "1.1.1";
 String wifiname, wifipassword;
 String zebraIP;
 int zebraPort;
@@ -305,6 +305,17 @@ void refreshWatchdogRetries() {
   }
 }
 
+void resethWatchdogRetries() {
+  if (WiFi.status() == WL_CONNECTED) {
+    String serverPath = serverName + "/resethWatchdogRetries.php?id=" + taskID;
+    http.begin(serverPath.c_str());
+    int httpResponseCode = http.GET();
+    if (httpResponseCode > 0) {
+      Serial.println("Сбросили попытки ватчдога");
+    }
+  }
+}
+
 String rus(String source) {
   source.replace("^XA", "^XA^CI28");
   source.replace("^PP", "");
@@ -397,6 +408,7 @@ void continuePrint() {
     if (getScanStats() >= checkPercent) {
       Serial.println("По статистике было " + String(getScanStats()) + "% сканирующихся этикеток");
       resetStats();
+      if(watchdog) resethWatchdogRetries();
       print();
     } else {
       if(!watchdog or (watchdog and curWatchdogRetries>=watchdogRetries)){
@@ -405,8 +417,8 @@ void continuePrint() {
       } else if(watchdog and curWatchdogRetries<watchdogRetries){
         refreshWatchdogRetries();
         printWatchdog();
+        delay(200);
         esp_restart();
-        //curWatchdogRetries
       }
     }
   }
