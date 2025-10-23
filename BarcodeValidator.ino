@@ -10,7 +10,7 @@
 #include "LittleFS.h"
 
 const String sn = "0003";
-const String ver = "1.0.10";
+const String ver = "1.1.0";
 String wifiname, wifipassword;
 String zebraIP;
 int zebraPort;
@@ -37,7 +37,9 @@ int printedCount, needPrintCount;
 long taskID;
 unsigned long previousMillisTask = 0;
 float taskDelayTime;
-bool logScans = false;
+bool logScans, watchdog = false;
+byte watchdogRetries = 1;
+byte curWatchdogRetries = 0;
 
 String curBarcode;
 const int dbsize = 5; //Сколько ШК может быть на одной этикетке
@@ -58,6 +60,8 @@ String htmlProcessor(const String &var){
   if(var == "taskDelayTime") return String(taskDelayTime);
   if(var == "loadInterval") return String(loadInterval);
   if(var == "logScans" and logScans) return "checked";
+  if(var == "watchdog" and watchdog) return "checked";
+  if(var == "watchdogRetries") return String(watchdogRetries);
 
   return "";
 }
@@ -101,6 +105,8 @@ void setDefaultPrefs(){
 
     //Системные
     prefs.putBool("logScans", false);
+    prefs.putBool("watchdog", false);
+    prefs.putInt("watchdogRetries", 1);
     
     //WiFi
     prefs.putString("wifiname", "PlasticRepublic");
@@ -137,6 +143,8 @@ void getPrefs(){
   taskDelayTime = prefs.getFloat("taskDelayTime");
   loadInterval = prefs.getFloat("loadInterval");
   logScans = prefs.getBool("logScans");
+  watchdog = prefs.getBool("watchdog");
+  watchdogRetries = prefs.getInt("watchdogRetries");
 
   prefs.end();
 }
@@ -177,6 +185,7 @@ void savePrefs(AsyncWebServerRequest *request){
     loadInterval = (request->getParam("loadInterval", true)->value()).toFloat();
     prefs.putFloat("loadInterval", loadInterval);
   }
+
   if(request->hasParam("logScans", true) and !logScans){
     logScans = true;
     prefs.putBool("logScans", true);
@@ -184,6 +193,20 @@ void savePrefs(AsyncWebServerRequest *request){
   if(!request->hasParam("logScans", true) and logScans){
     logScans = false;
     prefs.putBool("logScans", false);
+  }
+
+  if(request->hasParam("watchdog", true) and !watchdog){
+    watchdog = true;
+    prefs.putBool("watchdog", true);
+  }
+  if(!request->hasParam("watchdog", true) and watchdog){
+    watchdog = false;
+    prefs.putBool("watchdog", false);
+  }
+
+  if(request->getParam("watchdogRetries", true)->value()!=String(watchdogRetries)) {
+    watchdogRetries = (request->getParam("watchdogRetries", true)->value()).toInt();
+    prefs.putInt("watchdogRetries", watchdogRetries);
   }
   
   prefs.end();
@@ -217,6 +240,7 @@ void getPrintTask() {
         int json_height = doc["height"];
         int json_speed = doc["speed"];
         int json_count = doc["count"];
+        byte json_curWatchdogRetries = doc["wd_retries"];
 
         if (json_id == 0) {
           Serial.println("Заданий нет");
@@ -237,6 +261,7 @@ void getPrintTask() {
         speed = json_speed;
         printInterval = (height * packet) / (speed * 25.4) * 1000;
         needPrintCount = json_count;
+        curWatchdogRetries = json_curWatchdogRetries;
 
         status = "ready";
 
@@ -265,6 +290,17 @@ void refreshPrintCount() {
     if (httpResponseCode > 0) {
       Serial.println("Обновили напечатаное кол-во +" + String(packet));
       printedCount += packet;
+    }
+  }
+}
+
+void refreshWatchdogRetries() {
+  if (WiFi.status() == WL_CONNECTED) {
+    String serverPath = serverName + "/refreshWatchdogRetries.php?id=" + taskID;
+    http.begin(serverPath.c_str());
+    int httpResponseCode = http.GET();
+    if (httpResponseCode > 0) {
+      Serial.println("Обновили попытки ватчдога");
     }
   }
 }
@@ -317,6 +353,14 @@ void printNotPermit() {
   client.print(rus(warning));
 }
 
+void printWatchdog(){
+  Serial.println("Сработал ватчдог. Перезагрузка для повторной печати");
+  client.connect(zebraIP.c_str(), zebraPort);
+  if(!client.connected()) Serial.println("Ошибка! Соединение не установлено.");
+  String warning = "^XA^PR3^MD10^LH1,1^FO30,100^FB550,5,0,L^A@N,40,40,E:TT0003M_.TTF^FDСработал ватчдог. Перезагрузка для повторной печати ^PQ1^XZ";
+  client.print(rus(warning));
+}
+
 void taskEnd() {
   client.connect(zebraIP.c_str(), zebraPort);
   if(!client.connected()) Serial.println("Ошибка! Соединение не установлено.");
@@ -355,8 +399,15 @@ void continuePrint() {
       resetStats();
       print();
     } else {
-      printNotPermit();
-      closeTask();
+      if(!watchdog or (watchdog and curWatchdogRetries>=watchdogRetries)){
+        printNotPermit();
+        closeTask();
+      } else if(watchdog and curWatchdogRetries<watchdogRetries){
+        refreshWatchdogRetries();
+        printWatchdog();
+        esp_restart();
+        //curWatchdogRetries
+      }
     }
   }
 }

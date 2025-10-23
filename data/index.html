@@ -53,9 +53,26 @@
 				<input id="loadInterval" name="loadInterval" type="number" class="form-control" value="%loadInterval%">
 			</div>
 
+			<div class="row mb-3">
+				<div class="col-12 col-md-6">
+					<div class="input-group">
+						<span class="input-group-text">Количество попыток ватчдога</span>
+						<input id="watchdogRetries" name="watchdogRetries" type="number" class="form-control" value="%watchdogRetries%">
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="form-check">
+						<input id="watchdog" name="watchdog" class="form-check-input" type="checkbox" %watchdog%>
+						<label class="form-check-label">
+							Включить ватчдог
+						</label>
+					</div>
+				</div>
+			</div>
+
 			<div class="form-check mb-3">
 				<input id="logScans" name="logScans" class="form-check-input" type="checkbox" %logScans%>
-				<label class="form-check-label" for="flexCheckDefault">
+				<label class="form-check-label">
 					Выводить все сканы в консоль
 				</label>
 			</div>
